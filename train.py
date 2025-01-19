@@ -100,29 +100,36 @@ def main():
     
     # Create models directory if it doesn't exist
     os.makedirs('saved_models', exist_ok=True)
+    os.makedirs('test_results', exist_ok=True)
     
     # Initialize data loader and model
     data_loader = MarketDataLoader(config)
     features = data_loader.prepare_features()
     
-    # Split data into train and validation
-    train_cutoff = len(features) - int(len(features) * 0.2)  # 20% for validation
-    train_features = features.iloc[:train_cutoff]
-    val_features = features.iloc[train_cutoff:]
-    
     # Get numeric feature columns
-    feature_cols = [
-        'returns', 'volatility', 
-        'ma_50', 'ma_200',  # Updated MA column names
-        'rsi_14',           # Updated RSI column name
-        'volume_ma20_ratio',
-        'macd', 'macd_signal',
-        'bb_position_20',
-        'momentum_10d',
-        'atr_14'
-    ]
+    feature_cols = [col for col in features.columns if col != 'Symbol']  # Use all numeric features
+    print(f"\nUsing {len(feature_cols)} features:")
+    for i, col in enumerate(feature_cols, 1):
+        print(f"{i}. {col}")
+    print("\n")
+    
+    # Split data into train and validation by date
+    dates = features.index.unique()
+    train_dates = dates[:-int(len(dates) * 0.2)]  # 80% for training
+    val_dates = dates[-int(len(dates) * 0.2):]    # 20% for validation
+    
+    train_features = features[features.index.isin(train_dates)]
+    val_features = features[features.index.isin(val_dates)]
+    
+    print(f"Training data from {train_dates[0]} to {train_dates[-1]}")
+    print(f"Validation data from {val_dates[0]} to {val_dates[-1]}\n")
+    
     train_values = train_features[feature_cols].values
     val_values = val_features[feature_cols].values
+    
+    # Update config with actual input dimension
+    config['model']['input_dim'] = len(feature_cols)
+    print(f"Updated model input dimension to {len(feature_cols)}\n")
     
     # Initialize model and move to device
     model = TitansModel(config).to(device)
@@ -139,8 +146,7 @@ def main():
         optimizer,
         mode='min',
         factor=0.5,
-        patience=2,
-        verbose=True
+        patience=2
     )
     
     # Loss function
@@ -167,16 +173,18 @@ def main():
         
         # Update learning rate
         scheduler.step(val_loss)
+        current_lr = optimizer.param_groups[0]['lr']
+        print(f"Learning rate: {current_lr:.2e}")
         
         # Calculate metrics
         train_metrics = calculate_metrics(
-            train_values[window_size+1:, :config['model']['input_dim']],
-            train_predictions
+            train_values[window_size+1:, 0],  # Use only returns for metrics
+            train_predictions[:, 0]           # First output is returns prediction
         )
         
         val_metrics = calculate_metrics(
-            val_values[window_size+1:, :config['model']['input_dim']],
-            val_predictions
+            val_values[window_size+1:, 0],    # Use only returns for metrics
+            val_predictions[:, 0]             # First output is returns prediction
         )
         
         # Print metrics
@@ -221,8 +229,8 @@ def main():
     )
     
     final_metrics = calculate_metrics(
-        val_values[window_size+1:, :config['model']['input_dim']],
-        final_predictions
+        val_values[window_size+1:, 0],    # Use only returns for metrics
+        final_predictions[:, 0]             # First output is returns prediction
     )
     
     # Plot final results

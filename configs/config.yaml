@@ -6,14 +6,14 @@ data:
   feature_window: 20
 
 model:
-  input_dim: 11
-  memory_dim: 64
-  num_memory_layers: 2
-  num_attention_heads: 4
-  dropout: 0.1
+  input_dim: 64
+  memory_dim: 128
+  num_memory_layers: 3
+  num_attention_heads: 8
+  dropout: 0.2
 
 training:
-  batch_size: 128
+  batch_size: 64
   learning_rate: 0.0001
   momentum: 0.9
   weight_decay: 0.01
