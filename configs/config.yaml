@@ -6,8 +6,8 @@ data:
   feature_window: 20
 
 model:
-  input_dim: 5
-  memory_dim: 32
+  input_dim: 11
+  memory_dim: 64
   num_memory_layers: 2
   num_attention_heads: 4
   dropout: 0.1

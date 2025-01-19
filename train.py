@@ -111,7 +111,16 @@ def main():
     val_features = features.iloc[train_cutoff:]
     
     # Get numeric feature columns
-    feature_cols = ['returns', 'volatility', 'ma50', 'ma200', 'rsi']
+    feature_cols = [
+        'returns', 'volatility', 
+        'ma_50', 'ma_200',  # Updated MA column names
+        'rsi_14',           # Updated RSI column name
+        'volume_ma20_ratio',
+        'macd', 'macd_signal',
+        'bb_position_20',
+        'momentum_10d',
+        'atr_14'
+    ]
     train_values = train_features[feature_cols].values
     val_values = val_features[feature_cols].values
     
