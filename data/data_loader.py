@@ -18,7 +18,7 @@ class MarketDataLoader:
         dfs = []
         for symbol in self.symbols:
             try:
-                df = yf.download(symbol, self.start_date, self.end_date)
+                df = yf.download(symbol, self.start_date, self.end_date, interval='1h')
                 if len(df) > 0:  # Only add if we got data
                     df['Symbol'] = symbol
                     dfs.append(df)
@@ -78,7 +78,9 @@ class MarketDataLoader:
         for symbol in self.symbols:
             try:
                 # Download data
-                df = yf.download(symbol, self.start_date, self.end_date)
+                print(f"Downloading {symbol} data from {self.start_date} to {self.end_date} with 1h interval...")
+                df = yf.download(symbol, self.start_date, self.end_date, interval='1h')
+                print(f"Downloaded {len(df)} rows of data")
                 if len(df) == 0:
                     print(f"No data available for {symbol}")
                     continue
