@@ -19,6 +19,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
+.coverage
+htmlcov/
+*.pyc
 
 # Virtual Environment
 venv/
@@ -40,4 +44,4 @@ test_results/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb 
+*.ipynb

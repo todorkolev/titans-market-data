@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from typing import List, Tuple
 import torch
+from sklearn.preprocessing import StandardScaler
 
 class MarketDataLoader:
     def __init__(self, config: dict):
@@ -10,6 +11,7 @@ class MarketDataLoader:
         self.start_date = config['data']['start_date']
         self.end_date = config['data']['end_date']
         self.window_size = config['data']['window_size']
+        self.scaler = StandardScaler()
         
     def download_data(self) -> pd.DataFrame:
         """Download market data for all symbols."""
@@ -88,6 +90,9 @@ class MarketDataLoader:
                 close_series = df['Close']
                 volume_series = df['Volume']
                 
+                # Log transform volume
+                volume_series = np.log1p(volume_series)
+                
                 # Returns and volatility
                 returns = close_series.pct_change(fill_method=None)
                 features['returns'] = returns
@@ -100,7 +105,7 @@ class MarketDataLoader:
                 features['ma200'] = (ma200 / close_series - 1)
                 
                 # RSI
-                features['rsi'] = self._calculate_rsi(close_series)
+                features['rsi'] = self._calculate_rsi(close_series) / 100.0  # Normalize RSI to [0,1]
                 
                 # Volume features
                 vol_ma20 = volume_series.rolling(window=20).mean()
@@ -125,5 +130,11 @@ class MarketDataLoader:
         # Combine features from all symbols
         all_features = pd.concat(features_list)
         all_features = all_features.sort_index()
+        
+        # Normalize numerical features
+        numeric_columns = all_features.select_dtypes(include=[np.number]).columns
+        symbol_column = all_features['Symbol']
+        all_features[numeric_columns] = self.scaler.fit_transform(all_features[numeric_columns])
+        all_features['Symbol'] = symbol_column
         
         return all_features 
