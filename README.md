@@ -1,10 +1,10 @@
 # Market Titans
 
-Implementation of the Titans paper approach for market data prediction.
-
 ## Overview
 
-This project implements the Titans architecture from the paper "Titans: Learning to Memorize at Test Time" for market data prediction. The implementation includes:
+This project implements the Titans architecture from ["Titans: Learning to Memorize at Test Time"](https://arxiv.org/abs/2501.00663v1) (Behrouz et al., 2024) for market prediction. The Titans model introduces a novel neural long-term memory module that can effectively handle context windows of over 2M tokens while maintaining fast parallel training and inference, making it particularly interesting for analyzing extensive market history and patterns.
+
+The implementation includes:
 
 - Neural Memory Module with test-time learning
 - Multi-head attention mechanism

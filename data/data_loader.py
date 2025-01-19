@@ -37,12 +37,40 @@ class MarketDataLoader:
         
         return combined
     
+    @staticmethod
+    def _calculate_rsi(prices: pd.Series, periods: int = 14) -> pd.Series:
+        """Calculate RSI technical indicator."""
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=periods).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=periods).mean()
+        
+        rs = gain / loss
+        return 100 - (100 / (1 + rs))
+    
+    @staticmethod
+    def _calculate_macd(prices: pd.Series) -> Tuple[pd.Series, pd.Series, pd.Series]:
+        """Calculate MACD, Signal line, and MACD histogram."""
+        exp1 = prices.ewm(span=12, adjust=False).mean()
+        exp2 = prices.ewm(span=26, adjust=False).mean()
+        macd = exp1 - exp2
+        signal = macd.ewm(span=9, adjust=False).mean()
+        hist = macd - signal
+        return macd, signal, hist
+    
+    @staticmethod
+    def _calculate_bollinger_bands(prices: pd.Series, window: int = 20) -> Tuple[pd.Series, pd.Series, pd.Series]:
+        """Calculate Bollinger Bands."""
+        ma = prices.rolling(window=window).mean()
+        std = prices.rolling(window=window).std()
+        upper = ma + (std * 2)
+        lower = ma - (std * 2)
+        return upper, ma, lower
+    
     def prepare_features(self):
         """
-        Prepare features from downloaded data.
+        Prepare features from downloaded data with enhanced technical indicators.
         Returns a DataFrame with features for all symbols.
         """
-        # Download data for each symbol
         features_list = []
         
         for symbol in self.symbols:
@@ -56,18 +84,29 @@ class MarketDataLoader:
                 # Calculate features
                 features = pd.DataFrame(index=df.index)
                 
-                # Returns
-                features['returns'] = df['Close'].pct_change(fill_method=None)
+                # Required features for training
+                close_series = df['Close']
+                volume_series = df['Volume']
                 
-                # Volatility
-                features['volatility'] = features['returns'].rolling(window=20).std()
+                # Returns and volatility
+                returns = close_series.pct_change(fill_method=None)
+                features['returns'] = returns
+                features['volatility'] = returns.rolling(window=20).std()
                 
                 # Moving averages
-                features['ma50'] = (df['Close'].rolling(window=50).mean() / df['Close'] - 1)
-                features['ma200'] = (df['Close'].rolling(window=200).mean() / df['Close'] - 1)
+                ma50 = close_series.rolling(window=50).mean()
+                ma200 = close_series.rolling(window=200).mean()
+                features['ma50'] = (ma50 / close_series - 1)
+                features['ma200'] = (ma200 / close_series - 1)
                 
                 # RSI
-                features['rsi'] = self._calculate_rsi(df['Close'])
+                features['rsi'] = self._calculate_rsi(close_series)
+                
+                # Volume features
+                vol_ma20 = volume_series.rolling(window=20).mean()
+                features['volume_ma20'] = vol_ma20
+                features['volume_ma20_ratio'] = volume_series.div(vol_ma20).fillna(0)
+                features['volume_price_trend'] = volume_series.mul(returns).fillna(0)
                 
                 # Add symbol identifier
                 features['Symbol'] = symbol
@@ -87,18 +126,4 @@ class MarketDataLoader:
         all_features = pd.concat(features_list)
         all_features = all_features.sort_index()
         
-        # Normalize numeric features
-        numeric_cols = ['returns', 'volatility', 'ma50', 'ma200', 'rsi']
-        all_features[numeric_cols] = (all_features[numeric_cols] - all_features[numeric_cols].mean()) / (all_features[numeric_cols].std() + 1e-8)
-        
-        return all_features
-    
-    @staticmethod
-    def _calculate_rsi(prices: pd.Series, periods: int = 14) -> pd.Series:
-        """Calculate RSI technical indicator."""
-        delta = prices.diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=periods).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=periods).mean()
-        
-        rs = gain / loss
-        return 100 - (100 / (1 + rs)) 
+        return all_features 
