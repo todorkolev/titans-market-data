@@ -87,3 +87,42 @@ The model provides:
 - Performance metrics (MSE, MAE, Correlation, Directional Accuracy)
 - Saved model checkpoints for best performing models
 - Comprehensive test results and visualizations 
+
+## Cloud Deployment Options
+
+### Google Colab (Easiest)
+1. Open [Google Colab](https://colab.research.google.com)
+2. Create a new notebook
+3. Clone the repository:
+```bash
+!git clone https://github.com/todorkolev/titans-market-data.git
+```
+4. Install the dependencies:
+```bash
+!cd titans-market-data && pip install -r requirements.txt
+```
+5. Run the training:
+```bash
+!cd titans-market-data && python train.py
+```
+
+### AWS EC2
+1. Launch an EC2 instance (recommended: g4dn.xlarge for GPU support)
+2. Connect to your instance:
+```bash
+ssh -i ~/.ssh/your-key.pem ubuntu@your-instance-ip
+```
+3. Install dependencies:
+```bash
+sudo apt-get update
+sudo apt-get install -y python3-pip git
+```
+4. Clone and run:
+```bash
+git clone https://github.com/todorkolev/titans-market-data.git
+cd titans-market-data
+pip install -r requirements.txt
+python train.py
+```
+
+For persistent storage, consider attaching an EBS volume to your EC2 instance. 
